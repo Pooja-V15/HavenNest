@@ -1,0 +1,220 @@
+index.html
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HavenNest - Where Comfort Feels Like Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <!-- Assuming the user places logo.jpg in the same directory or assets directory. We use logo.jpg -->
+        <img src="logo.jpg" alt="HavenNest Logo"
+            onerror="this.onerror=null; this.src='https://via.placeholder.com/800x600?text=HavenNest+Logo';">
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="hidden">
+
+        <!-- Navigation Header -->
+        <header id="main-nav">
+            <div class="logo-container" onclick="app.navigate('home')" style="cursor: pointer;">
+                <h1>Haven<span>Nest</span></h1>
+            </div>
+            <nav>
+                <ul id="nav-links-logged-out">
+                    <li><a href="#" onclick="app.navigate('auth')">Login / Sign Up</a></li>
+                </ul>
+                <ul id="nav-links-logged-in" class="hidden">
+                    <li><a href="#" onclick="app.navigate('home')">Home</a></li>
+                    <li><a href="#" onclick="app.navigate('dashboard')">Dashboard</a></li>
+                    <li><button class="btn-secondary" onclick="app.logout()">Logout</button></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main class="container">
+            <!-- Auth Section -->
+            <section id="auth-section" class="hidden">
+                <div class="auth-card" id="login-card">
+                    <h2>Welcome Back</h2>
+                    <form id="login-form">
+                        <div class="input-group">
+                            <label>Email Address</label>
+                            <input type="email" id="login-email" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Password</label>
+                            <input type="password" id="login-password" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Login</button>
+                    </form>
+                    <div class="auth-switch">
+                        Don't have an account? <a onclick="app.toggleAuth('signup')">Sign Up</a>
+                    </div>
+                </div>
+
+                <div class="auth-card hidden" id="signup-card">
+                    <h2>Create Account</h2>
+                    <form id="signup-form">
+                        <div class="input-group">
+                            <label>Full Name</label>
+                            <input type="text" id="signup-name" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Email Address</label>
+                            <input type="email" id="signup-email" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Phone Number</label>
+                            <input type="text" id="signup-phone" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Password</label>
+                            <input type="password" id="signup-password" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Sign Up</button>
+                    </form>
+                    <div class="auth-switch">
+                        Already have an account? <a onclick="app.toggleAuth('login')">Login</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Home Section -->
+            <section id="home-section" class="hidden">
+                <div class="hero">
+                    <h2>Where Comfort Feels Like Home</h2>
+                    <p>Discover premium hostels, luxury hotels, and cozy rentals tailored for you.</p>
+                </div>
+
+                <div class="categories">
+                    <div class="category-card" onclick="app.loadListings('Hostels')">
+                        <!-- User's hostel image -->
+                        <div class="category-img"
+                            style="background-image: url('hostel_b.jpg'); background-color: #eee;"></div>
+                        <div class="category-content">
+                            <h3>Hostels</h3>
+                            <p>Affordable & community-driven stays.</p>
+                        </div>
+                    </div>
+                    <div class="category-card" onclick="app.loadListings('Hotels')">
+                        <!-- User's hotel/villa image -->
+                        <div class="category-img" style="background-image: url('villa.jpg'); background-color: #eee;">
+                        </div>
+                        <div class="category-content">
+                            <h3>Hotels</h3>
+                            <p>Luxury and comfort combined.</p>
+                        </div>
+                    </div>
+                    <div class="category-card" onclick="app.loadListings('Rentals')">
+                        <!-- User's bed/rental image -->
+                        <div class="category-img" style="background-image: url('bed.jpg'); background-color: #eee;">
+                        </div>
+                        <div class="category-content">
+                            <h3>Rentals</h3>
+                            <p>Your private space, anywhere.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Listing Section -->
+            <section id="listing-section" class="hidden">
+                <div class="listing-header"
+                    style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <button class="btn-secondary" onclick="app.navigate('home')">← Back</button>
+                        <h2 class="page-title" id="listing-title" style="margin: 0; border: none; padding: 0;">
+                            Properties</h2>
+                    </div>
+                    <input type="text" id="property-search" placeholder="Search by name or location in Bangalore..."
+                        style="padding: 1rem; width: 100%; border-radius: var(--border-radius); border: 1px solid var(--border-color); font-size: 1rem;">
+                </div>
+                <div class="property-list" id="property-list-container">
+                    <!-- Dynamic properties injected here -->
+                </div>
+            </section>
+
+            <!-- Booking Section -->
+            <section id="booking-section" class="hidden">
+                <h2 class="page-title">Book Your Stay</h2>
+                <button class="btn-secondary" style="margin-bottom: 2rem;" onclick="app.navigate('listing')">←
+                    Back</button>
+                <div class="auth-card" style="margin: 0 auto; max-width: 600px;">
+                    <h3 id="booking-property-name" style="color: var(--primary-color); margin-bottom: 1rem;">Property
+                    </h3>
+                    <form id="booking-form">
+                        <input type="hidden" id="book-prop-type">
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="input-group">
+                                <label>Full Name</label>
+                                <input type="text" id="book-name" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Email Address</label>
+                                <input type="email" id="book-email" required>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="input-group">
+                                <label>Phone Number</label>
+                                <input type="text" id="book-phone" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Aadhar Proof (ID No.)</label>
+                                <input type="text" id="book-aadhar" required>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Complete Address</label>
+                            <input type="text" id="book-address" required>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                            <div class="input-group">
+                                <label>Duration & Pricing</label>
+                                <select id="book-duration" required>
+                                    <!-- Dynamically populated by JS based on category -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary" style="margin-top: 1rem;">Confirm Booking</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="hidden">
+                <h2 class="page-title">My Dashboard</h2>
+                <div class="dashboard-card">
+                    <h3 style="color: var(--primary-color); margin-bottom: 1rem;">My Bookings</h3>
+                    <div id="user-bookings-list">
+                        <p>Loading bookings...</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <footer>
+            <p>&copy; 2026 HavenNest. Where Comfort Feels Like Home.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,368 @@
+app.js
+
+
+
+const app = {
+    state: {
+        isLoggedIn: false,
+        user: null,
+        currentSection: 'auth',
+        currentCategory: ''
+    },
+
+    init() {
+        // Splash Screen Logic
+        setTimeout(() => {
+            document.getElementById('splash-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                this.navigate(this.state.isLoggedIn ? 'home' : 'auth');
+            }, 500);
+        }, 2500);
+
+        this.bindEvents();
+    },
+
+    bindEvents() {
+        // Login Form
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            const usersDB = JSON.parse(localStorage.getItem('usersDB') || '{}');
+            if (usersDB[email]) {
+                if (usersDB[email].password === password) {
+                    this.loginSuccess(usersDB[email].name);
+                } else {
+                    alert('Incorrect password. Please try again.');
+                }
+            } else {
+                alert('It looks like you are logging in for the first time. Please sign up.');
+                this.toggleAuth('signup');
+            }
+        });
+
+        // Signup Form
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const phone = document.getElementById('signup-phone').value;
+            const password = document.getElementById('signup-password').value;
+
+            const usersDB = JSON.parse(localStorage.getItem('usersDB') || '{}');
+            if (usersDB[email]) {
+                alert('Email already registered! Please log in.');
+                this.toggleAuth('login');
+                return;
+            }
+
+            usersDB[email] = { name, phone, password };
+            localStorage.setItem('usersDB', JSON.stringify(usersDB));
+
+            alert('Thank you for signing up!');
+            this.loginSuccess(name);
+        });
+
+        // Booking Form
+        document.getElementById('booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const propType = document.getElementById('book-prop-type').value;
+            const duration = document.getElementById('book-duration').value;
+            
+            const fullName = document.getElementById('book-name').value;
+            const email = document.getElementById('book-email').value;
+            const phone = document.getElementById('book-phone').value;
+            const aadharProof = document.getElementById('book-aadhar').value;
+            const address = document.getElementById('book-address').value;
+
+            try {
+                const res = await fetch('/api/book', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        property_type: propType, 
+                        duration,
+                        full_name: fullName,
+                        email: email,
+                        phone: phone,
+                        aadhar_proof: aadharProof,
+                        address: address
+                    })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert('Booking Confirmed! Room: ' + data.room_number);
+                    document.getElementById('booking-form').reset();
+                    this.navigate('dashboard');
+                } else {
+                    alert(data.message || 'Booking failed');
+                }
+            } catch (err) {
+                console.log("Mocking booking for local preview");
+                const mockBookings = JSON.parse(localStorage.getItem('mockBookings') || '[]');
+                const newBooking = {
+                    property_type: propType,
+                    property_name: document.getElementById('booking-property-name').textContent,
+                    room_number: 'MOCK-' + Math.floor(Math.random() * 1000 + 100),
+                    duration: duration,
+                    status: 'Active',
+                    full_name: fullName,
+                    phone: phone
+                };
+                mockBookings.push(newBooking);
+                localStorage.setItem('mockBookings', JSON.stringify(mockBookings));
+                
+                alert('Booking Confirmed! (Mock) Room: ' + newBooking.room_number);
+                document.getElementById('booking-form').reset();
+                this.navigate('dashboard');
+            }
+        });
+    },
+
+    loginSuccess(userName) {
+        this.state.isLoggedIn = true;
+        this.state.user = userName;
+        document.getElementById('nav-links-logged-out').classList.add('hidden');
+        document.getElementById('nav-links-logged-in').classList.remove('hidden');
+        this.navigate('home');
+    },
+
+    logout() {
+        this.state.isLoggedIn = false;
+        this.state.user = null;
+        document.getElementById('nav-links-logged-out').classList.remove('hidden');
+        document.getElementById('nav-links-logged-in').classList.add('hidden');
+        this.navigate('auth');
+    },
+
+    toggleAuth(type) {
+        if(type === 'login') {
+            document.getElementById('signup-card').classList.add('hidden');
+            document.getElementById('login-card').classList.remove('hidden');
+        } else {
+            document.getElementById('login-card').classList.add('hidden');
+            document.getElementById('signup-card').classList.remove('hidden');
+        }
+    },
+
+    navigate(section) {
+        if(!this.state.isLoggedIn && section !== 'auth') {
+            section = 'auth'; // Force auth
+        }
+
+        const sections = ['auth-section', 'home-section', 'listing-section', 'booking-section', 'dashboard-section'];
+        sections.forEach(s => document.getElementById(s).classList.add('hidden'));
+
+        if(section === 'listing') {
+            document.getElementById('listing-section').classList.remove('hidden');
+        } else {
+            document.getElementById(`${section}-section`).classList.remove('hidden');
+        }
+
+        this.state.currentSection = section;
+
+        if(section === 'dashboard') {
+            this.loadDashboard();
+        }
+    },
+
+    loadListings(category) {
+        this.state.currentCategory = category;
+        document.getElementById('listing-title').textContent = `Available ${category}`;
+        
+        let allProperties = [];
+        
+        if (category === 'Hostels') {
+            const hostelNames = [
+                "The Wanderer's Hub", "Backpacker's Haven", "Nomad Nest", 
+                "Zenith Hostel", "Urban Oasis Backpackers", "Sunrise Sleep Station", "The Cozy Bunk"
+            ];
+            const locations = [
+                "Indiranagar, Bangalore", "Koramangala, Bangalore", "Whitefield, Bangalore", 
+                "HSR Layout, Bangalore", "Jayanagar, Bangalore", "Malleswaram, Bangalore", "BTM Layout, Bangalore"
+            ];
+            for(let i=0; i<7; i++) {
+                allProperties.push({
+                    id: i+1,
+                    name: hostelNames[i],
+                    location: locations[i],
+                    priceInfo: "Monthly: $150 | Yearly: $1500",
+                    img: `hostel${i+1}.jpg`
+                });
+            }
+        } else if (category === 'Hotels') {
+            const hotelNames = [
+                "Grand Sapphire Resort", "The Velvet Suites", "Oceanview Pearl Hotel", 
+                "Royal Crown Plaza", "Majestic Pine Lodge"
+            ];
+            const locations = [
+                "MG Road, Bangalore", "Electronic City, Bangalore", "Hebbal, Bangalore", 
+                "Ulsoor, Bangalore", "Marathahalli, Bangalore"
+            ];
+            for(let i=0; i<5; i++) {
+                allProperties.push({
+                    id: i+1,
+                    name: hotelNames[i],
+                    location: locations[i],
+                    priceInfo: "1 Night: $100 | Premium: $250",
+                    img: `hotel${i+1}.jpg`
+                });
+            }
+        } else if (category === 'Rentals') {
+            const rentalNames = [
+                "Sunset Boulevard Villa", "The Rustic Cabin", "Seaside Retreat Home", 
+                "Modern Loft Downtown", "Whispering Pines Cottage", "Crystal Lake House", "The Emerald Estate"
+            ];
+            const locations = [
+                "Yelahanka, Bangalore", "Sarjapur Road, Bangalore", "Bellandur, Bangalore", 
+                "Banashankari, Bangalore", "Basavanagudi, Bangalore", "Rajajinagar, Bangalore", "Kalyan Nagar, Bangalore"
+            ];
+            for(let i=0; i<7; i++) {
+                allProperties.push({
+                    id: i+1,
+                    name: rentalNames[i],
+                    location: locations[i],
+                    priceInfo: "Monthly: $800 | Yearly: $9000",
+                    img: `rent${i+1}.jpg`
+                });
+            }
+        }
+
+        this.state.currentProperties = allProperties;
+
+        const minShown = 2;
+        const maxShown = allProperties.length;
+        const numToShow = Math.floor(Math.random() * (maxShown - minShown + 1)) + minShown;
+        
+        const shuffled = [...allProperties].sort(() => 0.5 - Math.random());
+        const propertiesToShow = shuffled.slice(0, numToShow);
+
+        this.renderProperties(propertiesToShow);
+
+        const searchInput = document.getElementById('property-search');
+        if (searchInput) {
+            const newSearchInput = searchInput.cloneNode(true);
+            searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+            
+            newSearchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                if (query.trim() === '') {
+                    this.renderProperties(propertiesToShow);
+                } else {
+                    const filtered = this.state.currentProperties.filter(p => 
+                        p.name.toLowerCase().includes(query) || p.location.toLowerCase().includes(query)
+                    );
+                    let result = filtered;
+                    if (result.length > 5) {
+                        result = result.slice(0, Math.floor(Math.random() * 3) + 3);
+                    }
+                    this.renderProperties(result);
+                }
+            });
+        }
+
+        this.navigate('listing');
+    },
+
+    renderProperties(properties) {
+        const listContainer = document.getElementById('property-list-container');
+        listContainer.innerHTML = ''; 
+        if (properties.length === 0) {
+            listContainer.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: var(--text-light);">No properties found matching your search.</p>';
+            return;
+        }
+        properties.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'property-card';
+            card.innerHTML = `
+                <img src="${p.img}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300x200?text=${this.state.currentCategory}'">
+                <div class="property-info">
+                    <h3>${p.name}</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.2rem;">📍 ${p.location}</p>
+                    <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Rates: ${p.priceInfo}</p>
+                    <button class="btn-primary" style="width:100%; margin-top: 1rem;" onclick="app.startBooking('${p.name}', '${this.state.currentCategory}')">Book Now</button>
+                </div>
+            `;
+            listContainer.appendChild(card);
+        });
+    },
+
+    startBooking(propertyName, category) {
+        document.getElementById('booking-property-name').textContent = propertyName;
+        document.getElementById('book-prop-type').value = category;
+        
+        // Populate dynamic duration based on category
+        const durationSelect = document.getElementById('book-duration');
+        durationSelect.innerHTML = '';
+        
+        if (category === 'Hostels') {
+            durationSelect.innerHTML += `<option value="Monthly ($150)">Monthly ($150)</option>`;
+            durationSelect.innerHTML += `<option value="Yearly ($1500)">Yearly ($1500)</option>`;
+        } else if (category === 'Hotels') {
+            durationSelect.innerHTML += `<option value="1 Night ($100)">1 Night ($100)</option>`;
+            durationSelect.innerHTML += `<option value="3 Nights ($280)">3 Nights ($280)</option>`;
+            durationSelect.innerHTML += `<option value="1 Week ($600)">1 Week ($600)</option>`;
+            durationSelect.innerHTML += `<option value="Premium ($250/Night)">Premium ($250/Night)</option>`;
+        } else if (category === 'Rentals') {
+            durationSelect.innerHTML += `<option value="Monthly ($800)">Monthly ($800)</option>`;
+            durationSelect.innerHTML += `<option value="Yearly ($9000)">Yearly ($9000)</option>`;
+        }
+
+        this.navigate('booking');
+    },
+
+    async loadDashboard() {
+        const list = document.getElementById('user-bookings-list');
+        list.innerHTML = '<p>Loading...</p>';
+
+        try {
+            const res = await fetch('/api/dashboard');
+            const data = await res.json();
+            if(data.success) {
+                list.innerHTML = '';
+                if(data.bookings.length === 0) {
+                    list.innerHTML = '<p>No active bookings.</p>';
+                    return;
+                }
+                data.bookings.forEach(b => {
+                    list.innerHTML += `
+                        <div class="booking-item">
+                            <div>
+                                <h4>${b.property_type} - Room ${b.room_number}</h4>
+                                <p style="color:var(--text-light); font-size:0.9rem;">Type: ${b.room_type} | Duration: ${b.duration}</p>
+                            </div>
+                            <span class="status-badge status-active">${b.status}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                list.innerHTML = '<p>Failed to load bookings.</p>';
+            }
+        } catch(err) {
+            console.log("Mocking dashboard");
+            const mockBookings = JSON.parse(localStorage.getItem('mockBookings') || '[]');
+            if (mockBookings.length === 0) {
+                list.innerHTML = '<p>No active bookings.</p>';
+            } else {
+                list.innerHTML = '';
+                mockBookings.forEach(b => {
+                    list.innerHTML += `
+                        <div class="booking-item">
+                            <div>
+                                <h4>${b.property_name} - Room ${b.room_number}</h4>
+                                <p style="color:var(--text-light); font-size:0.9rem;">Type: ${b.property_type} | Duration: ${b.duration}</p>
+                                <p style="color:var(--text-light); font-size:0.8rem;">Name: ${b.full_name} | Phone: ${b.phone}</p>
+                            </div>
+                            <span class="status-badge status-active">${b.status}</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+    }
+};
+
+window.onload = () => app.init();
