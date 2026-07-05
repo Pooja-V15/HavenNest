@@ -4,7 +4,7 @@
 
 > **Find Your Perfect Home with Confidence.**
 
-**Developed by Pooja V**
+**Developed by Pooja V and Harshitha N**
 
 HavenNest is a modern full-stack real estate platform that simplifies the process of buying, renting, and exploring properties. It provides an intuitive interface for browsing listings, searching with smart filters, viewing detailed property information, and saving favorite homes, all within a responsive and user-friendly experience.
 
